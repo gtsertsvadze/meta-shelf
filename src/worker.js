@@ -1,4 +1,3 @@
-import { SEEDS } from './seed.js';
 import { parse, validPath } from '../public/markdown.js';
 
 const encoder = new TextEncoder();
@@ -52,18 +51,19 @@ async function body(request) {
 
 async function readFile(env, path) {
   const saved = await env.FILES.get(`file:${path}`);
-  return saved === null ? (SEEDS[path] ?? null) : (saved || null);
+  return path === 'README.md' ? (saved ?? '') : (saved || null);
 }
 
 async function files(env) {
-  const values = new Map(Object.entries(SEEDS));
+  // The protected README starts blank; all authored content lives in KV.
+  const values = new Map([['README.md', '']]);
   let cursor;
   do {
     const page = await env.FILES.list({ prefix: 'file:', cursor });
     const entries = await Promise.all(page.keys.map(async key => [key.name.slice(5), await env.FILES.get(key.name)]));
     for (const [path, raw] of entries) {
-      if (raw) values.set(path, raw);
-      else if (raw === '') values.delete(path);
+      // Ignore legacy project deletion tombstones; an empty README is valid.
+      if (raw !== null && (raw !== '' || path === 'README.md')) values.set(path, raw);
     }
     cursor = page.list_complete ? undefined : page.cursor;
   } while (cursor);
@@ -109,8 +109,7 @@ export default {
         if (request.method === 'DELETE') {
           if (path === 'README.md') throw fail('README.md is protected.', 403);
           if (existing === null) throw fail('file not found.', 404);
-          // A tombstone keeps deleted seed files deleted across deployments.
-          await env.FILES.put(`file:${path}`, '');
+          await env.FILES.delete(`file:${path}`);
           return json({ ok: true });
         }
         if (request.headers.get('If-None-Match') === '*' && existing !== null) throw fail('file already exists.', 409);

@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { readFile, mkdir } from 'node:fs/promises';
 import { parseEnv } from 'node:util';
+import { serialize } from '../public/markdown.js';
 
 const secrets = parseEnv(await readFile('.dev.vars', 'utf8'));
 const command = async (page, value) => {
@@ -10,29 +11,29 @@ const command = async (page, value) => {
   await expect(page.locator('#command')).toBeEnabled();
 };
 
-test('tree, grouping, inline markdown, deep links, and terminal', async ({ page }) => {
+test('fresh installation has only a blank README, with working terminal and deep links', async ({ page, request }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/');
-  await expect(page.locator('#summary')).toHaveText('0 directories, 6 files');
-  await expect(page.getByRole('button', { name: 'Edit tomfoolery.md', exact: true })).toHaveCount(0);
-  await page.getByRole('link', { name: 'tomfoolery.md', exact: true }).click();
-  await expect(page).toHaveURL(/#\/tomfoolery\.md$/);
-  await expect(page.getByRole('heading', { name: 'tomfoolery' })).toBeVisible();
+  expect(await (await request.get('/api/files')).json()).toEqual([{ path: 'README.md', raw: '' }]);
+  await expect(page.locator('#summary')).toHaveText('0 directories, 1 file');
+  await expect(page.locator('#tree .file-link')).toHaveCount(1);
+  await expect(page.locator('#grouping button')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Edit README.md', exact: true })).toHaveCount(0);
+  await page.getByRole('link', { name: 'README.md', exact: true }).click();
+  await expect(page).toHaveURL(/#\/README\.md$/);
+  await expect(page.locator('.file-view')).toBeVisible();
   await page.getByRole('button', { name: 'Toggle raw markdown' }).click();
-  await expect(page.locator('.file-view pre')).toContainText('# tomfoolery');
+  await expect(page.locator('.file-view pre')).toBeEmpty();
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'tomfoolery' })).toBeVisible();
-  await page.getByRole('button', { name: 'type', exact: true }).click();
-  await expect(page.locator('#summary')).toHaveText('4 directories, 6 files');
-  await expect(page.locator('.file-view')).toHaveClass(/nested/);
-  await page.getByRole('button', { name: 'genre', exact: true }).click();
-  await expect(page.locator('.tree-folder').last()).toHaveText('└── unknown/');
+  await expect(page.locator('.file-view')).toBeVisible();
   await command(page, 'group nonsense');
   await expect(page.locator('#history')).toContainText('valid keys: none');
-  await command(page, 'cat wavesay');
-  await expect(page.locator('#history')).toContainText('name: wavesay');
+  await command(page, 'ls');
+  await expect(page.locator('#history')).toContainText('README.md');
+  await command(page, 'cat README');
+  await expect(page.locator('#history .error')).toHaveCount(1);
   await command(page, 'new nope');
   await expect(page.locator('#history')).toContainText('permission denied. try sudo.');
   await command(page, 'missing-command');
@@ -52,10 +53,10 @@ test('tree, grouping, inline markdown, deep links, and terminal', async ({ page 
   for (const colorScheme of ['dark', 'light']) {
     await page.emulateMedia({ colorScheme });
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.getByRole('link', { name: 'tomfoolery.md', exact: true }).click();
+    await page.getByRole('link', { name: 'README.md', exact: true }).click();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: `.artifacts/mobile-${colorScheme}.png`, fullPage: true });
-    await page.getByRole('button', { name: 'Close tomfoolery.md' }).click();
+    await page.getByRole('button', { name: 'Close README.md' }).click();
   }
   expect(errors).toEqual([]);
 });
@@ -63,7 +64,7 @@ test('tree, grouping, inline markdown, deep links, and terminal', async ({ page 
 test('admin login, validation, CRUD persistence, README protection, logout', async ({ page, request }) => {
   const path = `test-${Date.now()}.md`;
   await page.goto('/');
-  await expect(page.locator('#summary')).toHaveText('0 directories, 6 files');
+  await expect(page.locator('#summary')).toHaveText('0 directories, 1 file');
   await command(page, 'sudo');
   const input = page.getByLabel('Passphrase', { exact: true });
   await input.fill(secrets.ADMIN_PASSPHRASE);
@@ -74,6 +75,7 @@ test('admin login, validation, CRUD persistence, README protection, logout', asy
   const session = cookies.find(cookie => cookie.name === 'metashelf_session');
   expect(session.httpOnly).toBe(true);
   expect(session.sameSite).toBe('Strict');
+  const authHeaders = { Cookie: `metashelf_session=${session.value}` };
   await expect(page.getByRole('button', { name: 'Delete README.md', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: '+ new.md', exact: true }).click();
   await page.getByRole('textbox', { name: 'File name', exact: true }).fill(path);
@@ -90,6 +92,24 @@ test('admin login, validation, CRUD persistence, README protection, logout', asy
   await expect(page.getByRole('button', { name: 'custom tag', exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Test project' })).toBeVisible();
+  await page.getByRole('button', { name: 'Toggle raw markdown' }).click();
+  await expect(page.locator('.file-view pre')).toContainText('# Test project');
+  await command(page, `cat ${path}`);
+  await expect(page.locator('#history')).toContainText('name: test project');
+  const untagged = `untagged-${Date.now()}.md`;
+  expect((await request.put(`/api/files/${untagged}`, {
+    headers: authHeaders,
+    data: { raw: serialize({ name: 'Temporary fixture', url: 'example.invalid', tags: {}, h1: 'Temporary fixture', body: '' }) },
+  })).status()).toBe(201);
+  await page.reload();
+  await page.getByRole('button', { name: 'type', exact: true }).click();
+  await expect(page.locator('#summary')).toHaveText('2 directories, 3 files');
+  await expect(page.locator('.file-view')).toHaveClass(/nested/);
+  await expect(page.locator('.tree-folder').last()).toHaveText('└── unknown/');
+  await page.getByRole('button', { name: 'custom tag', exact: true }).click();
+  await expect(page.locator('.tree-folder').first()).toContainText('custom value/');
+  expect((await request.delete(`/api/files/${untagged}`, { headers: authHeaders })).status()).toBe(200);
+  await page.reload();
   await page.getByRole('button', { name: `Edit ${path}`, exact: true }).click();
   await page.getByRole('textbox', { name: 'Body', exact: true }).fill('Updated paragraph.');
   await page.getByRole('button', { name: ':wq save', exact: true }).click();
@@ -99,8 +119,17 @@ test('admin login, validation, CRUD persistence, README protection, logout', asy
   await page.getByRole('button', { name: 'Edit README.md', exact: true }).click();
   await expect(page.locator('.editor textarea')).toHaveCount(1);
   await expect(page.locator('.editor input')).toHaveCount(0);
-  await page.getByRole('button', { name: ':q! cancel', exact: true }).click();
-  const authHeaders = { Cookie: `metashelf_session=${session.value}` };
+  await expect(page.getByRole('textbox', { name: 'Body', exact: true })).toHaveValue('');
+  await page.getByRole('textbox', { name: 'Body', exact: true }).fill('Temporary README text.');
+  await page.getByRole('button', { name: ':wq save', exact: true }).click();
+  await expect(page.locator('.file-view')).toContainText('Temporary README text.');
+  await page.reload();
+  await expect(page.locator('.file-view')).toContainText('Temporary README text.');
+  await page.getByRole('button', { name: 'Edit README.md', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Body', exact: true }).fill('');
+  await page.getByRole('button', { name: ':wq save', exact: true }).click();
+  await expect(page.locator('.editor')).toHaveCount(0);
+  expect(await (await request.get('/README.md')).text()).toBe('');
   expect((await request.delete('/api/files/README.md', { headers: authHeaders })).status()).toBe(403);
   expect((await request.put(`/api/files/${path}`, { headers: { ...authHeaders, 'If-None-Match': '*' }, data: { raw: 'bad' } })).status()).toBe(409);
   expect((await request.put(`/api/files/${path}`, { headers: authHeaders, data: { raw: 'bad' } })).status()).toBe(400);
@@ -110,11 +139,13 @@ test('admin login, validation, CRUD persistence, README protection, logout', asy
   await page.getByRole('button', { name: `Delete ${path}`, exact: true }).click();
   await expect(page.getByRole('link', { name: path, exact: true })).toHaveCount(0);
   await page.reload();
-  await expect(page.locator('#summary')).toHaveText('0 directories, 6 files');
+  await expect(page.locator('#summary')).toHaveText('0 directories, 1 file');
+  expect((await request.get(`/api/files/${path}`)).status()).toBe(404);
+  expect(await (await request.get('/api/files')).json()).toEqual([{ path: 'README.md', raw: '' }]);
   await command(page, 'logout');
   await expect(page.locator('#prompt-label')).toHaveText('$ ');
   expect((await request.put('/api/files/no.md', { data: { raw: 'bad' } })).status()).toBe(401);
-  expect((await request.delete('/api/files/tomfoolery.md')).status()).toBe(401);
+  expect((await request.delete(`/api/files/${path}`)).status()).toBe(401);
 });
 
 test('wrong passphrase is rejected and attempts are rate limited', async ({ request }) => {

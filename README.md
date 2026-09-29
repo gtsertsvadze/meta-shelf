@@ -6,7 +6,7 @@ A single-page directory of markdown files, deployed as a Cloudflare Worker. Plai
 
 Use Node.js 22 or newer. Run `npm ci`, copy `.dev.vars.example` to `.dev.vars`, set a long `ADMIN_PASSPHRASE` and a separate random `SESSION_SECRET`, then run `npm run dev`.
 
-`npm test` checks the markdown parser and runs browser/API tests against a local Worker and local KV. The browser tests use installed Chrome. `npm run check` validates content and builds a Wrangler dry run.
+`npm test` checks the markdown parser and runs browser/API tests against a local Worker with fresh, isolated KV storage. The browser tests use installed Chrome and create temporary test records at runtime. `npm run check` builds the assets and runs a Wrangler dry run.
 
 ## Deploy
 
@@ -16,7 +16,9 @@ Type `help` at the site prompt for commands. Type `sudo` and enter the configure
 
 ## Content
 
-The six files in `content/` supply the initial directory. Production edits persist as raw markdown strings in KV keys named `file:<path>`, overriding the bundled starting files. Empty KV values are deletion tombstones, so deleted starting files stay deleted after deployment. Do not delete the KV namespace when redeploying. KV changes can take up to 60 seconds to propagate to other Cloudflare locations; successful edits appear immediately in the editing browser.
+The repository contains the application only. There are no bundled projects or content files. A fresh installation has an empty, protected `README.md` and no projects. Use `sudo` on the site to edit README and create projects with `+ new.md` or `new`.
+
+All authored content persists as raw markdown in Cloudflare KV keys named `file:<path>`. Deployments do not seed, overwrite, or restore content. Deleting a project removes its KV record. Do not delete the KV namespace when redeploying. KV changes can take up to 60 seconds to propagate to other Cloudflare locations; successful edits appear immediately in the editing browser.
 
 `GET /api/files` exports all current `{path, raw}` records, and `/<path>.md` serves each raw file directly. The admin editor supports arbitrary JSON string tags, inline validation, and Ctrl/Cmd+Enter to save. README is editable but cannot be deleted.
 

@@ -12,8 +12,7 @@ export function parse(path, source) {
   if (typeof source !== 'string' || new TextEncoder().encode(source).length > 65536) throw new Error('file must be text under 64 KB.');
   const raw = source.replace(/\r\n?/g, '\n');
   if (path === 'README.md') {
-    if (!raw.trim()) throw new Error('README.md cannot be empty.');
-    return { path, raw, fm: '', tags: {}, name: '', url: '', h1: '', body: raw, paras: raw.trim().split(/\n\s*\n/) };
+    return { path, raw, fm: '', tags: {}, name: '', url: '', h1: '', body: raw, paras: raw.trim() ? raw.trim().split(/\n\s*\n/) : [] };
   }
   const match = raw.match(/^---\n([\s\S]*?)\n---(?:\n|$)/);
   if (!match) throw new Error('expected frontmatter between --- lines.');

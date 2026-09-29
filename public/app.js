@@ -315,7 +315,7 @@ async function runCommand(value) {
     case 'group':
       if (arg === 'none' && !quoted) setGroup(null);
       else if (tagKeys().includes(arg)) setGroup(arg);
-      else throw new Error(`unknown group. valid keys: none, ${tagKeys().join(', ')}`);
+      else throw new Error(`unknown group. valid keys: ${['none', ...tagKeys()].join(', ')}`);
       break;
     case 'clear': $('#history').replaceChildren(); break;
     case 'sudo':
