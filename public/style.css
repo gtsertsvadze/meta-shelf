@@ -1,0 +1,63 @@
+@font-face{font-family:'Geist Mono';font-style:normal;font-weight:400;font-display:swap;src:url('/fonts/geist-mono-latin-400-normal.woff2') format('woff2')}
+@font-face{font-family:'Geist Mono';font-style:normal;font-weight:500;font-display:swap;src:url('/fonts/geist-mono-latin-500-normal.woff2') format('woff2')}
+:root{color-scheme:light dark;--bg:#f3f2f2;--text:#201e1d;--muted:#605d5d;--accent:#ec3013;--rule:#d7d3d3}
+@media(prefers-color-scheme:dark){:root{--bg:#1b1a19;--text:#e6e3e2;--muted:#9b9797;--accent:#f2553b;--rule:#3a3736}}
+*{box-sizing:border-box}
+html{background:var(--bg);color:var(--text);font-family:'Geist Mono','JetBrains Mono',ui-monospace,monospace;font-size:14px;line-height:1.8;-webkit-text-size-adjust:100%}
+body{margin:0}
+main{max-width:640px;padding:72px 24px 120px}
+button,input,textarea{font:inherit;color:inherit;background:none;border:0;border-radius:0;padding:0;margin:0}
+button,a{-webkit-tap-highlight-color:transparent}
+button{cursor:pointer;text-align:left;line-height:inherit}
+button:hover,a:hover{text-decoration:underline}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+::selection{background:color-mix(in srgb,var(--accent) 25%,transparent)}
+.muted,.tree-prefix,.actions,.file-actions{color:var(--muted)}
+.active,.error,.accent{color:var(--accent)}
+#grouping{display:flex;flex-wrap:wrap;column-gap:1ch;align-items:baseline}
+#grouping>span{margin-right:0}
+.tree-row{display:flex;align-items:baseline;min-height:1.8em;flex-wrap:wrap}
+.tree-prefix{white-space:pre;flex:none;user-select:none}
+.file-link{overflow-wrap:anywhere;min-width:0}
+.file-actions{display:inline-flex;gap:2ch;margin-left:3ch}
+.tree-folder{overflow-wrap:anywhere}
+.file-view,.editor{margin:28px 0 32px 4ch;min-width:0}
+.nested{margin-left:8ch}
+.view-header{display:flex;align-items:baseline;justify-content:space-between;gap:1ch;flex-wrap:wrap;margin-bottom:28px}
+.view-command{overflow-wrap:anywhere}
+.actions{display:flex;gap:2ch;white-space:nowrap}
+pre{font:inherit;white-space:pre-wrap;overflow-wrap:anywhere;margin:0}
+.frontmatter{color:var(--muted)}
+hr{border:0;border-top:1px solid var(--rule);margin:24px 0}
+h1{font:inherit;font-weight:500;margin:0 0 18px}
+p{margin:0 0 18px;overflow-wrap:anywhere}
+p:last-child{margin-bottom:0}
+.new-row{margin-left:4ch}
+#summary{margin-top:28px}
+#terminal{margin-top:28px}
+.history-line{white-space:pre-wrap;overflow-wrap:anywhere;min-height:1.8em;color:var(--muted)}
+.history-line.input{color:var(--text)}
+.history-line.error{color:var(--accent)}
+#prompt{display:flex;align-items:baseline;min-height:1.8em;cursor:text}
+#prompt-label{white-space:pre;flex:none}
+#command-wrap{position:relative;flex:1;min-width:0;overflow:hidden}
+#command{display:block;width:100%;min-width:0;outline:none;caret-color:var(--accent);line-height:1.8}
+#command:focus-visible{outline:0}
+#command-wrap:not(.has-value) #command{caret-color:transparent}
+#prompt:has(#command:focus-visible){outline:2px solid var(--accent);outline-offset:3px}
+#cursor{position:absolute;top:.4em;left:0;width:1ch;height:1.1em;background:var(--accent);pointer-events:none;animation:blink 1.1s steps(1,end) infinite}
+#command-wrap.has-value #cursor{display:none}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+@media(prefers-reduced-motion:reduce){#cursor{animation:none}}
+.editor-frontmatter{border-left:1px solid var(--rule);padding-left:16px;margin:0 0 24px;color:var(--muted)}
+.editor-field{display:flex;gap:1ch;align-items:baseline}
+.editor-field>span{flex:none;min-width:5ch}
+.editor input{width:100%;min-width:0;color:var(--text)}
+.editor textarea{display:block;resize:none;overflow:hidden;width:100%;min-height:1.8em;color:var(--text);line-height:1.8}
+.editor textarea::placeholder,.editor input::placeholder{color:var(--muted);opacity:1}
+.editor-title{display:flex;gap:1ch;margin-bottom:18px}
+.editor-title>span{color:var(--muted)}
+.editor-error{margin-top:18px;white-space:pre-wrap;overflow-wrap:anywhere}
+button:disabled{cursor:wait}
+@media(max-width:420px){.file-actions{margin-left:2ch;gap:1ch}.actions{gap:1ch}}

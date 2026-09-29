@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f2f2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1b1a19" media="(prefers-color-scheme: dark)">
+  <meta name="description" content="A directory of small things I have made. Each file is one project. Read it, cat it, or parse it. Agents welcome.">
+  <title>metashelf.dev</title>
+  <link rel="icon" href="data:,">
+  <link rel="preload" href="/fonts/geist-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <main aria-label="metashelf.dev file directory">
+    <div><span class="muted">$ </span>tree metashelf.dev</div>
+    <div id="grouping" aria-label="Group files"><span class="muted">--group-by </span><button class="active" type="button">none</button></div>
+    <div class="muted">.</div>
+    <div id="tree" aria-label="Files"><span class="muted">loading files…</span></div>
+    <div id="summary" class="muted" aria-live="polite"></div>
+    <section id="terminal" aria-label="Terminal">
+      <div id="history" role="log" aria-live="polite" aria-relevant="additions"></div>
+      <form id="prompt" autocomplete="off">
+        <label id="prompt-label" for="command" class="muted">$ </label>
+        <div id="command-wrap">
+          <input id="command" name="command" aria-label="Terminal command" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="4096">
+          <span id="cursor" aria-hidden="true"></span>
+        </div>
+      </form>
+    </section>
+    <noscript>This directory needs JavaScript. The markdown files are also available directly, starting at <a href="/README.md">README.md</a>.</noscript>
+  </main>
+</body>
+</html>
