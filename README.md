@@ -22,4 +22,4 @@ All authored content persists as raw markdown in Cloudflare KV keys named `file:
 
 `GET /api/files` exports all current `{path, raw}` records, and `/<path>.md` serves each raw file directly. The admin editor supports arbitrary JSON string tags, inline validation, and Ctrl/Cmd+Enter to save. README is editable but cannot be deleted.
 
-Reference screenshots live in `visuals/`. Local test screenshots are ignored under `.artifacts/`.
+Local test screenshots are ignored under `.artifacts/`.
